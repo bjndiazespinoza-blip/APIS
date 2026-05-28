@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API2</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>📋 Datos del Usuario</h1>
+        <div id="userInfo">
+            <div class="loading">
+                <div>Cargando información del usuario...</div>
+                <div style="margin-top: 10px;">⏳</div>
+            </div>
+        </div>
+        <button class="refresh-btn" id="refreshBtn">⟳ Recargar datos</button>
+        <footer>Fuente: JSONPlaceholder API</footer>
+    </div>
+
+    <script>
+        // URL de la API para obtener el usuario con ID 1
+        const API_URL = 'https://jsonplaceholder.typicode.com/users/1';
+
+        // Función para consumir la API y obtener los datos del usuario
+        async function obtenerUsuario() {
+            try {
+                // Realizar la petición GET a la API
+                const response = await fetch(API_URL);
+
+                // Verificar si la respuesta fue exitosa
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                // Convertir la respuesta a JSON
+                const usuario = await response.json();
+                return usuario;
+            } catch (error) {
+                console.error('Error al obtener el usuario:', error);
+                throw error;
+            }
+        }
+
+        // Función para mostrar los datos del usuario en el DOM
+        function mostrarUsuario(usuario) {
+            const contenedor = document.getElementById('userInfo');
+
+            // Crear el HTML con la información del usuario
+            const html = `
+                <div class="user-card">
+                    <div class="icon">👤</div>
+                    <div class="user-info">
+                        <label>📛 Nombre</label>
+                        <p><strong>${usuario.name}</strong></p>
+                    </div>
+                    <div class="user-info">
+                        <label>📧 Email</label>
+                        <p><a href="mailto:${usuario.email}" style="color: white; text-decoration: underline;">${usuario.email}</a></p>
+                    </div>
+                    <div class="user-info">
+                        <label>📞 Teléfono</label>
+                        <p>${usuario.phone}</p>
+                    </div>
+                    <div class="user-info">
+                        <label>🏢 Empresa</label>
+                        <p>${usuario.company.name}</p>
+                    </div>
+                    <div class="user-info">
+                        <label>🌐 Sitio web</label>
+                        <p><a href="http://${usuario.website}" target="_blank" style="color: white; text-decoration: underline;">${usuario.website}</a></p>
+                    </div>
+                </div>
+            `;
+
+            contenedor.innerHTML = html;
+        }
+
+        // Función para mostrar un mensaje de error
+        function mostrarError(mensaje) {
+            const contenedor = document.getElementById('userInfo');
+            contenedor.innerHTML = `
+                <div class="error">
+                    <strong>❌ Error</strong>
+                    <p>${mensaje}</p>
+                    <p>Por favor, verifica tu conexión a internet e intenta nuevamente.</p>
+                </div>
+            `;
+        }
+
+        // Función para mostrar el estado de carga
+        function mostrarCargando() {
+            const contenedor = document.getElementById('userInfo');
+            contenedor.innerHTML = `
+                <div class="loading">
+                    <div>Cargando información del usuario...</div>
+                    <div style="margin-top: 10px;">⏳</div>
+                </div>
+            `;
+        }
+
+        // Función principal que carga y muestra los datos del usuario
+        async function cargarUsuario() {
+            mostrarCargando();
+
+            try {
+                const usuario = await obtenerUsuario();
+                mostrarUsuario(usuario);
+            } catch (error) {
+                mostrarError('No se pudieron cargar los datos del usuario.');
+            }
+        }
+
+        // Cargar los datos del usuario cuando la página se carga
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarUsuario();
+
+            // Agregar funcionalidad al botón de recargar
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.addEventListener('click', cargarUsuario);
+        });
+    </script>
+</body>
+
+</html>

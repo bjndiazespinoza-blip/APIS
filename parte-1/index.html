@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API1</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <button id="btnPersonaje">🎲 Mostrar personaje aleatorio</button>
+        <div id="personajeInfo"></div>
+        <footer>Fuente: Rick and Morty API</footer>
+    </div>
+
+    <script>
+        // URL base de la API - Cantidad total de personajes: 826 (actualizado a 2025)
+        const API_BASE = 'https://rickandmortyapi.com/api/character';
+        
+        // Variable para almacenar el número total de personajes (se obtendrá al cargar)
+        let totalCharacters = 826; // Valor por defecto, pero se actualizará dinámicamente
+
+        // Función para obtener el total de personajes disponibles
+        async function obtenerTotalPersonajes() {
+            try {
+                const response = await fetch(API_BASE);
+                if (!response.ok) throw new Error('Error al obtener información');
+                const data = await response.json();
+                totalCharacters = data.info.count;
+                console.log(`Total de personajes disponibles: ${totalCharacters}`);
+            } catch (error) {
+                console.error('Error obteniendo total de personajes:', error);
+                // Si falla, mantenemos el valor por defecto
+            }
+        }
+
+        // Función para obtener un personaje aleatorio
+        async function obtenerPersonajeAleatorio() {
+            try {
+                // Generar ID aleatorio entre 1 y el total de personajes
+                const randomId = Math.floor(Math.random() * totalCharacters) + 1;
+                
+                // Consumir la API con el ID aleatorio
+                const response = await fetch(`${API_BASE}/${randomId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const personaje = await response.json();
+                return personaje;
+            } catch (error) {
+                console.error('Error al obtener el personaje:', error);
+                throw error;
+            }
+        }
+
+        // Función para mostrar el personaje en el DOM
+        function mostrarPersonaje(personaje) {
+            const contenedor = document.getElementById('personajeInfo');
+            
+            // Determinar la clase para el estado
+            let statusClass = 'unknown';
+            if (personaje.status === 'Alive') statusClass = 'Alive';
+            if (personaje.status === 'Dead') statusClass = 'Dead';
+            
+            // Crear el HTML de la tarjeta del personaje
+            const html = `
+                <div class="card">
+                    <img src="${personaje.image}" alt="${personaje.name}">
+                    <h2>${personaje.name}</h2>
+                    <div class="status ${statusClass}">
+                        ${personaje.status}
+                    </div>
+                    <p><strong>Especie:</strong> ${personaje.species}</p>
+                    <p><strong>Género:</strong> ${personaje.gender}</p>
+                    <p><strong>Origen:</strong> ${personaje.origin.name}</p>
+                    <p><strong>Ubicación:</strong> ${personaje.location.name}</p>
+                </div>
+            `;
+            
+            contenedor.innerHTML = html;
+        }
+
+        // Función para mostrar un error
+        function mostrarError(mensaje) {
+            const contenedor = document.getElementById('personajeInfo');
+            contenedor.innerHTML = `
+                <div class="card error">
+                    <p>❌ ${mensaje}</p>
+                    <p>Intenta nuevamente.</p>
+                </div>
+            `;
+        }
+
+        // Función principal que se ejecuta al hacer clic en el botón
+        async function handleMostrarPersonaje() {
+            // Mostrar mensaje de carga
+            const contenedor = document.getElementById('personajeInfo');
+            contenedor.innerHTML = `
+                <div class="card">
+                    <p>🔄 Cargando personaje aleatorio...</p>
+                </div>
+            `;
+            
+            try {
+                const personaje = await obtenerPersonajeAleatorio();
+                mostrarPersonaje(personaje);
+            } catch (error) {
+                mostrarError('No se pudo obtener el personaje. Verifica tu conexión.');
+            }
+        }
+
+        // Inicializar la aplicación
+        async function init() {
+            // Obtener el total de personajes al inicio
+            await obtenerTotalPersonajes();
+            
+            // Configurar el botón
+            const boton = document.getElementById('btnPersonaje');
+            boton.addEventListener('click', handleMostrarPersonaje);
+            
+            // Mostrar un personaje aleatorio al cargar la página (opcional)
+            // handleMostrarPersonaje();
+        }
+        
+        // Iniciar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

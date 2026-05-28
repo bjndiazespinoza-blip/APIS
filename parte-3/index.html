@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API3</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>
+            <span>📖</span>
+            Frases Inspiradoras
+            <span>✨</span>
+        </h1>
+        <div class="subtitle">Sabiduría aleatoria en español</div>
+
+        <button id="generateBtn">🎲 Generar frase aleatoria</button>
+
+        <div class="quote-container" id="quoteContainer">
+            <div class="quote-card">
+                <div class="quote-text">
+                    "La sabiduría comienza en la admiración."
+                </div>
+                <div class="quote-author">
+                    Sócrates
+                </div>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            💡 Presiona el botón para obtener una nueva frase
+        </div>
+    </div>
+    <footer>
+        @ Mis APIs de frases célebres en español
+    </footer>
+
+    <script>
+        const MI_API_URL = 'https://raw.githubusercontent.com/bjndiazespinoza-blip/api-mis-frases/main/frases.json';
+
+        let quoteCount = 0;
+        let lastAuthor = '';
+        let ultimaFrase = '';
+        let frasesCache = null; // Para almacenar las frases y no llamar a la API cada vez
+
+        const generateBtn = document.getElementById('generateBtn');
+        const quoteContainer = document.getElementById('quoteContainer');
+        const statsElement = document.getElementById('stats');
+
+        // Función para obtener todas las frases desde tu API
+        async function obtenerFrases() {
+            // Si ya tenemos las frases en caché, las devolvemos
+            if (frasesCache) {
+                return frasesCache;
+            }
+
+            try {
+                const response = await fetch(MI_API_URL);
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const frases = await response.json();
+                frasesCache = frases; // Guardar en caché
+                console.log(`✅ Frases cargadas correctamente. Total: ${frases.length} frases`);
+                return frases;
+            } catch (error) {
+                console.error('Error al cargar las frases:', error);
+                throw error;
+            }
+        }
+
+        // Función para obtener una frase aleatoria (sin repetir la misma seguida)
+        async function obtenerFraseAleatoria() {
+            const frases = await obtenerFrases();
+
+            // Filtrar para no repetir la última frase mostrada
+            let frasesDisponibles = frases;
+            if (ultimaFrase) {
+                frasesDisponibles = frases.filter(f => f.texto !== ultimaFrase);
+                // Si solo hay una frase y es la última, usamos todas
+                if (frasesDisponibles.length === 0) {
+                    frasesDisponibles = frases;
+                }
+            }
+
+            const randomIndex = Math.floor(Math.random() * frasesDisponibles.length);
+            const fraseSeleccionada = frasesDisponibles[randomIndex];
+            ultimaFrase = fraseSeleccionada.texto;
+
+            return {
+                frase: fraseSeleccionada.texto,
+                autor: fraseSeleccionada.autor
+            };
+        }
+
+        function mostrarFrase(frase, autor) {
+            const html = `
+                <div class="quote-card" style="animation: fadeIn 0.5s ease;">
+                    <div class="quote-text">
+                        "${frase}"
+                    </div>
+                    <div class="quote-author">
+                        ${autor}
+                    </div>
+                </div>
+            `;
+            quoteContainer.innerHTML = html;
+            quoteCount++;
+            lastAuthor = autor;
+            actualizarEstadisticas();
+        }
+
+        function mostrarCargando() {
+            const html = `
+                <div class="quote-card loading">
+                    <div class="spinner"></div>
+                    <p>Conectando con mi API personal...</p>
+                </div>
+            `;
+            quoteContainer.innerHTML = html;
+        }
+
+        function mostrarError(mensaje) {
+            const html = `
+                <div class="quote-card error" style="background: #fee; color: #c33; padding: 20px; border-radius: 15px;">
+                    <h3>❌ Error al cargar la frase</h3>
+                    <p>${mensaje}</p>
+                    <p style="margin-top: 10px; font-size: 14px;">Verifica tu conexión a internet.</p>
+                </div>
+            `;
+            quoteContainer.innerHTML = html;
+        }
+
+        function actualizarEstadisticas() {
+            if (quoteCount === 0) {
+                statsElement.innerHTML = `💡 Presiona el botón para obtener una nueva frase`;
+            } else {
+                statsElement.innerHTML = `📊 Frases generadas: ${quoteCount} | Último autor: ${lastAuthor}`;
+            }
+        }
+
+        async function generarNuevaFrase() {
+            generateBtn.disabled = true;
+            generateBtn.textContent = '⏳ Cargando...';
+            mostrarCargando();
+
+            try {
+                const { frase, autor } = await obtenerFraseAleatoria();
+                mostrarFrase(frase, autor);
+            } catch (error) {
+                mostrarError('No se pudo conectar con la API. Verifica tu conexión.');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🎲 Generar frase aleatoria';
+            }
+        }
+
+        // Cargar una frase automáticamente al iniciar
+        async function cargarFraseInicial() {
+            mostrarCargando();
+            try {
+                const { frase, autor } = await obtenerFraseAleatoria();
+                mostrarFrase(frase, autor);
+            } catch (error) {
+                mostrarError('No se pudo cargar la frase inicial.');
+            }
+        }
+
+        // Event listeners
+        generateBtn.addEventListener('click', generarNuevaFrase);
+
+        // Inicializar cuando la página esté lista
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarFraseInicial();
+        });
+
+        // Mostrar en consola que la API está funcionando
+        console.log('🚀 Usando API personal:', MI_API_URL);
+    </script>
+</body>
+
+</html>
